@@ -14,13 +14,17 @@ function get(options, errorStr, callbackError, callback) {
   options.timeout = module.exports.TIMEOUT;
   setTimeout(() => {
     console.log(`get: ${errorStr}`);
+    var end = false;
     try {
       var get = (module.exports.secure ? https : http)
         .get(options, (res) => {
           if (res.statusCode != 200) {
             console.log(`error: ${res.statusCode} start: ${errorStr}`);
-            res.resume();
 
+            if (end) return;
+            end = true;
+
+            res.resume();
             return callbackError(res.statusCode);
           }
 
@@ -32,6 +36,9 @@ function get(options, errorStr, callbackError, callback) {
             })
             .on("end", () => {
               console.log(`end: ${errorStr}`);
+
+              if (end) return;
+              end = true;
 
               try {
                 var body = JSON.parse(rawData);
@@ -45,16 +52,28 @@ function get(options, errorStr, callbackError, callback) {
         .on("error", (e) => {
           console.log(`error: ${e.code} req: ${errorStr}`);
 
+          if (end) return;
+          end = true;
+
           get.destroy();
           callbackError();
         })
         .on("timeout", () => {
           console.log(`timeout: ${errorStr}`);
+
+          if (end) return;
+          end = true;
+
           get.destroy();
+          callbackError();
         })
         .setTimeout(module.exports.TIMEOUT);
     } catch (e) {
       console.log(`error: ${e.code} try: ${errorStr}`);
+
+      if (end) return;
+      end = true;
+
       return callbackError();
     }
   }, module.exports.TIMEOUT_REQUEST);
@@ -74,13 +93,17 @@ function request(options, postData, errorStr, callbackError, callback) {
   }
   setTimeout(() => {
     console.log(`request: ${errorStr}`);
+    var end = false;
     try {
       var request = (module.exports.secure ? https : http)
         .request(options, (res) => {
           if (res.statusCode != 200) {
             console.log(`error: ${res.statusCode} start: ${errorStr}`);
-            res.resume();
 
+            if (end) return;
+            end = true;
+
+            res.resume();
             return callbackError(res.statusCode);
           }
 
@@ -92,6 +115,9 @@ function request(options, postData, errorStr, callbackError, callback) {
             })
             .on("end", () => {
               console.log(`end: ${errorStr}`);
+
+              if (end) return;
+              end = true;
 
               try {
                 var body = JSON.parse(rawData);
@@ -105,12 +131,20 @@ function request(options, postData, errorStr, callbackError, callback) {
         .on("error", (e) => {
           console.log(`error: ${e.code} req: ${errorStr}`);
 
+          if (end) return;
+          end = true;
+
           request.destroy();
           callbackError();
         })
         .on("timeout", () => {
           console.log(`timeout: ${errorStr}`);
+
+          if (end) return;
+          end = true;
+
           request.destroy();
+          callbackError();
         })
         .setTimeout(module.exports.TIMEOUT);
 
@@ -118,6 +152,10 @@ function request(options, postData, errorStr, callbackError, callback) {
       request.end();
     } catch (e) {
       console.log(`error: ${e.code} try: ${errorStr}`);
+
+      if (end) return;
+      end = true;
+
       return callbackError();
     }
   }, module.exports.TIMEOUT_REQUEST);
